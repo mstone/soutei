@@ -1,0 +1,11 @@
+; Modelling access control lists and role-based access control
+; in Soutei
+; See the Soutei paper, section `Soutei by example'
+; This is the system policy
+
+may(?access) :- application says resource(?resource),
+                application says resource-owner(?owner),
+                application says public-key(?key),
+                hr says user-key(?user, ?key),
+                app-owner says role-member(?user, ?role),
+                ?owner says acl-may(?access, ?resource, ?role).

@@ -1,0 +1,7 @@
+; Modelling access control lists and role-based access control
+; in Soutei
+; See the Soutei paper, section `Soutei by example'
+; This is the hr policy, listing users are their keys
+
+user-key(Peter, "rsa:Z2FuZ3N0YQ==").
+user-key(Bill, "rsa:eWVhaCBoaQ==").

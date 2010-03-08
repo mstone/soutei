@@ -1,0 +1,10 @@
+; Modelling access control lists and role-based access control
+; in Soutei
+; See the Soutei paper, section `Soutei by example'
+; This is the TPS-report-owner policy, listing the access rights
+; of the roles for the particular resource, TPS-report-memo
+
+acl-may(read, TPS-report-memo, programmer).
+acl-may(read, TPS-report-memo, manager).
+acl-may(write, TPS-report-memo, manager).
+

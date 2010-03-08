@@ -1,0 +1,8 @@
+; Modelling access control lists and role-based access control
+; in Soutei
+; See the Soutei paper, section `Soutei by example'
+; This is the app-owner policy, listing the roles of users.
+
+role-member(Peter, programmer).
+role-member(Bill, manager).
+

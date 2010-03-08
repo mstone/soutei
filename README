@@ -1,0 +1,41 @@
+Soutei, a logic-based trust-management system
+Andrew Pimlott and Oleg Kiselyov
+
+Soutei is a trust-management system, a dialect of Binder, for access
+control in distributed systems. Soutei policies and credentials are
+written in a declarative logic-based security language and thus
+constitute distributed logic programs. Soutei policies are modular,
+concise, and readable. They support policy verification, and, despite
+the simplicity of the language, express role- and attribute-based
+access control lists, and conditional delegation.
+
+
+Documentation:
+ Andrew Pimlott and Oleg Kiselyov:
+ Soutei, a logic-based trust-management system (system description)
+ The paper presented at FLOPS 2006, 8th International Symposium on
+ Functional and Logic Programming. Fuji-Susono, Japan, April 24-26, 2006.
+ The paper is published in Springer's Lecture Notes in Computer Science 3945,
+ pp. 130-145, 2006.
+ http://dx.doi.org/10.1007/11737414
+http://okmij.org/ftp/papers/Soutei.pdf
+
+
+
+MANIFEST
+
+Soutei/		The Soutei library (The Soutei `package')
+
+	Sample Soutei applications
+soutei-server.hs		Soutei TCP server
+soutei-cli.hs			A bare-bone client for the soutei-server
+				(useful for testing)
+
+	Demonstrations
+demo/rbac/		Modelling access control lists and role-based 
+			access control in Soutei
+			See the Soutei paper, section `Soutei by example'
+demo/rbac/run-test.sh   The file to run the tests
+demo/rbac/demo/rbac/system	The system policy
+demo/rbac/demo/rbac/local/assertions/   Other policies (HR, app-owner, etc)
+
