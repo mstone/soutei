@@ -72,6 +72,7 @@ soutei qa  = do  bracket
 		  (hClose)
 		  (\h -> do
 		         hPutStr h $ make'req (qa_kv qa)
+		         hFlush h
                          -- shutdown s ShutdownSend
 		         hGetLine h)
 print'help str = do
