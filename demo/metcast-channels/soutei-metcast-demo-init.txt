@@ -1,0 +1,70 @@
+; The initial assertion for the demo June 2005
+; Can also be used for common Metcast channels
+;
+; When actually running the demo, replace ed.emergency@HOST, 
+; sam.sysadmin@HOST, etc. with real identities in use at the
+; demo system.
+
+; (re-)create, drop channel, change its attributes, etc.
+may-admin(channel,?access) :-
+		sam.sysadmin@HOST says may-admin(?access).
+
+	; emergency policies. Delegate to the emergency role
+may-admin(channel,?access) :-
+	     ed.emergency@HOST says may-admin(?access).
+
+; Move from Step 1 to init state as it makes demo easier to follow
+; SYSADM permits himself everything
+may-admin(channel, ?access) :- 
+	     system says access-right(?access),
+	     application says this-user(sam.sysadmin@HOST).
+
+; Move from Step 1 to init state as it makes demo easier to follow
+; the owner of the channel can delete the channel and update
+; its attributes
+may-admin(channel, ?access) :-
+	    system says access-right(?access),
+	    application says this-channel-owner(?channel,?owner),
+	    application says this-user(?owner).
+
+; read or write from the channels
+may(channel,?access) :-
+		application says this-channel-owner(?channel,?owner),
+		?owner says may(channel,?access).
+
+; Only sam.sysadmin@HOST may read the audit records
+may(channel, read) :-
+		application says this-channel-owner(ADMH,?),
+		application says this-user(sam.sysadmin@HOST).
+
+
+; For the demo, permit anyone to write to the ADM channel
+may(channel, write) :-
+		application says this-channel-owner(ADM,?).
+
+; For the demo, permit anyone to read from the ADM channel
+;may(channel, read) :-
+;		application says this-channel-owner(ADM,?).
+
+	; emergency policies. Delegate to the emergency role
+may(channel,?access) :-
+	     ed.emergency@HOST says may(channel,?access).
+
+
+	; ``Standard channels'' with the public access
+may(channel,?access) :-
+		     access-right(?access),
+		     application says this-channel-owner(?channel,?),
+		     standard-channel(?channel).
+
+access-right(read).
+access-right(write).
+access-right(create).
+access-right(recreate).
+access-right(delete).
+
+standard-channel("DemoFiles").
+standard-channel("SATIMG").
+standard-channel("TESTIMG").
+standard-channel("TextFiles").
+

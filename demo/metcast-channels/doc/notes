@@ -1,0 +1,116 @@
+cleanup
+- zero all assertions (4)
+- delete all channels (1)
+
+pre
+- log in as the following users
+  - Administrator
+  - cam.create
+  - don.delegate
+  - ed.emergency
+  - joe.canuck
+  - sam.sysadmin
+- close and reopen every browser (slide should open as start page)
+- increase font size twice
+
+Script follows.  Notes and actions are intermixed.
+
+start logged in as Administrator
+
+slide 00
+- Authz: who can access what resources?
+  - central to information assurance/NCES
+- Soutei is designed to be
+  - unified authorization service for all applications
+  - decentralized
+  - high assurance (prove you can't break it)
+- NESSO is a GFE (government furnished equipment)--we could use anything.
+- delegation and RAdAC show distributed, non-monolithic, flexible policy.
+- doesn't assume anything about the policy, nothing built in--it's
+  deny all (even from sysadmin) without an initial assertion to the
+  contrary.
+- channel owners can't even see own channels (example of how we can "lock
+  things down", secure by default)
+- base policy is encoded in a hard-coded soutei language assertion.
+- Soutei policy is a computer program.
+- note we will see examples of the Soutei language later (but you don't have
+  to understand it because we're using a UI)
+
+switch to sam.sysadmin
+
+slide 06
+- Note that before, nobody could create channels.
+- Channel-specific authorization policy UI.
+- note that this is a subset of Soutei; Soutei is more powerful than this
+- emphasize that
+  - every user has an assertion
+  - just because every user has an assertion, it doesn't mean every user is
+    trusted (partially decentralized)
+  - user assertions are combined with the base assertion to form the policy
+- rules
+  - "allow cam.create to create channels"
+    - privileges "create"
+    - "user name" "cam.create"
+- insist that pre this rule, cam couldn't create
+- read it back in english!
+
+switch to cam.create
+
+slide 07
+- Create channel DustSensorData
+  - name, dscription, and max entries are required fields
+- Observe that we can't see the channel we created, until we authorize
+  ourselves.
+- remind that we were delegated this ability by the default policy
+- rules
+  - "give myself full access"
+    - privileges "all client"
+    - "channel name" "DustSensorData"
+    - "user name" "cam.create"
+  - note AND
+  - "let don.delegate control US read access"
+    - explain this very carefully!!! belabor!!!
+    - privileges "read"
+    - "channel name" "DustSensorData"
+    - "user citizenship" "US"
+    - "delegate" "don.delegate"
+  - note OR
+- we can see the channel
+
+switch to don.delegate
+
+slide 08
+- Don can't see it at first.
+- Don delegates too much, either through carelessness or malice.
+  Fortunately, his delegation is controlled.
+- rules
+  - "read access to DustSensorData"
+    - privileges "read"
+    - "channel name" "DustSensorData"
+- He can see it--it "worked"
+- length 2 delegation chain
+
+switch to joe.canuck
+
+slide 09
+- No luck.
+- we delegated without compromising a static guarantee
+
+switch to ed.emergency
+
+slide 11
+- the initial policy allowed ed.emergency to grant any access
+- ed.emergency is really just a placeholder--could be an automatic
+  submission based on some conditions
+- emergency policy is really just delegation (perhaps don't mention so it
+  looks like a separate feature and not a hack?)
+- rules
+  - "all may read"
+    - privileges "read"
+- switch to joe.canuck
+- joe.canuck can see all channels
+- switch to ed.emergency
+- rules
+- switch to joe.canuck
+- no luck
+

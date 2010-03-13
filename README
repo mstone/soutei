@@ -39,3 +39,12 @@ demo/rbac/run-test.sh   The file to run the tests
 demo/rbac/demo/rbac/system	The system policy
 demo/rbac/demo/rbac/local/assertions/   Other policies (HR, app-owner, etc)
 
+
+demo/metcast-channels/  Extensive regression test suite for Soutei along 
+			the lines of an actual demonstration,
+			given in June 2005.
+			See Section `A real-life use case' in the Soutei
+			paper.
+demo/metcast-channels/Makefile	 do make test
+demo/metcast-channels/doc/  The slides of the test and the presentation
+			    script

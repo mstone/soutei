@@ -7,7 +7,6 @@ GHC_INCLUDES = `$(GHC) --print-libdir`/include
 
 
 PROGS := soutei-server soutei-cli
-# PROGS := soutei-server soutei-demonstration soutei-metcast-tests
 
 SOURCES := $(wildcard Soutei/*.hs)
 MODULES := $(subst /,.,$(patsubst %.hs,%,$(SOURCES)))
@@ -16,10 +15,17 @@ HC_CMD := $(GHC_MAKE) $(GHC_OPTS) -I$(GHC_INCLUDES)
 
 all: $(PROGS)
 
+test:
+	cd demo/metcast-channels/ && $(MAKE) test
+
+clean::
+	cd demo/metcast-channels/ && $(MAKE) clean
+
+
 %: %.hs
 	$(HC_CMD) -o $@ $*.hs
 
-clean:
+clean::
 	rm -f *.hi *.o $(PROGS)
 	rm -f Soutei/*.hi
 	rm -f Soutei/*.o
