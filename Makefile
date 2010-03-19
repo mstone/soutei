@@ -30,18 +30,19 @@ clean::
 	rm -f Soutei/*.hi
 	rm -f Soutei/*.o
 
-# The following targets require the FCGI library
-
-FCGIP=XXXSet-FGCI-library-here
-soutei-fcgi: soutei-fcgi.hs
-	ghc -O2 --make -I$(FCGIP)/fcgi/include -i$(FCGIP) \
-	$(FCGIP)/fcgi/fcgiapp.o $(FCGIP)/fcgi/os_unix.o \
-	soutei-fcgi.hs -o $@
-
-soutei-pipelined: soutei-pipelined.hs
-	ghc -O2 --make -i$(FCGIP) \
-	soutei-pipelined.hs -o $@
-
-soutei-mux: soutei-mux.hs
-	ghc -O2 --make -i$(FCGIP) $(FCGIP)/System/sys_open.o \
-	soutei-mux.hs -o $@
+# The following targets require the FCGI library or Metcast
+# They are present for information only
+#
+# FCGIP=XXXSet-FGCI-library-here
+# soutei-fcgi: soutei-fcgi.hs
+# 	ghc -O2 --make -I$(FCGIP)/fcgi/include -i$(FCGIP) \
+# 	$(FCGIP)/fcgi/fcgiapp.o $(FCGIP)/fcgi/os_unix.o \
+# 	soutei-fcgi.hs -o $@
+#
+# soutei-pipelined: soutei-pipelined.hs
+# 	ghc -O2 --make -i$(FCGIP) \
+# 	soutei-pipelined.hs -o $@
+#
+# soutei-mux: soutei-mux.hs
+# 	ghc -O2 --make -i$(FCGIP) $(FCGIP)/System/sys_open.o \
+# 	soutei-mux.hs -o $@

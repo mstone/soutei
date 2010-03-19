@@ -11,15 +11,17 @@ access control lists, and conditional delegation.
 
 
 Documentation:
- Andrew Pimlott and Oleg Kiselyov:
- Soutei, a logic-based trust-management system (system description)
- The paper presented at FLOPS 2006, 8th International Symposium on
- Functional and Logic Programming. Fuji-Susono, Japan, April 24-26, 2006.
- The paper is published in Springer's Lecture Notes in Computer Science 3945,
- pp. 130-145, 2006.
- http://dx.doi.org/10.1007/11737414
-http://okmij.org/ftp/papers/Soutei.pdf
+ - Andrew Pimlott and Oleg Kiselyov:
+   Soutei, a logic-based trust-management system (system description)
+   The paper presented at FLOPS 2006, 8th International Symposium on
+   Functional and Logic Programming. Fuji-Susono, Japan, April 24-26, 2006.
+   The paper is published in Springer's Lecture Notes in Computer Science 3945,
+   pp. 130-145, 2006.
+   http://dx.doi.org/10.1007/11737414
+   http://okmij.org/ftp/papers/Soutei.pdf
 
+- Specification, use cases and design notes
+  http://soutei.sf.net/doc/
 
 
 MANIFEST
