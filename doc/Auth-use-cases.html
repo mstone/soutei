@@ -1,0 +1,1356 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head><title>Use cases for the Soutei trust-management system</title><meta name="description" content="Use cases and details for Soutei."><meta name="AuthorAddress" content="oleg-at-okmij.org"><meta name="keywords" content="Binder, Soutei, Keynote, Datalog, Authorization, logic system."><meta name="Date-Revision-yyyymmdd" content="20051207"><meta name="Date-Creation-yyyymmdd" content="20040107"><link rel="start" href="Authorization.html" title="Authorization and Role-Based Access control"><link rel="contents" href="Authorization.html"><link rel="prev" href="Authorization.html"><link rel="next" href="Auth-transport.html"></head><body bgcolor="#FFFFFF">
+
+<div align="center" class="navbar">  <a href="Authorization.html">previous</a> &nbsp; <a href="Auth-transport.html">next</a> &nbsp; <a href="Authorization.html">contents</a> &nbsp; <a href="index.html">top</a>
+<hr></div>
+<h1 align=center>Soutei: syntax, semantics, and use cases</h1>
+<div>
+<ol><li><a href="#Introduction">Introduction</a>
+<li><a href="#Syntax">Syntax of Soutei</a>
+
+<ol><li><a href="#Safety">Safety of assertions</a>
+</ol><li><a href="#Semantics">Semantics of Soutei assertions</a>
+
+<ol><li><a href="#Application Context">Application Context</a>
+<li><a href="#Built-in">Built-in predicates</a>
+<li><a href="#says">says predicate</a>
+<li><a href="#Logical">Logical interpretation of says</a>
+</ol><li><a href="#Using">Using Soutei</a>
+
+<ol><li><a href="#Role-based">Role-based access control and Soutei</a>
+<li><a href="#Capabilities">Capabilities and Soutei</a>
+<li><a href="#Policies predicated on time">Policies predicated on time</a>
+<li><a href="#Lists, trees, organizational charts, and partial orders">Lists, trees, organizational charts, and partial orders</a>
+<li><a href="#Revocation">Revocation</a>
+</ol><li><a href="#Use">Use cases</a>
+<li><a href="#References">References</a>
+</ol>
+</div>
+<br>&nbsp;<a name="Introduction">&nbsp;</a>
+<h2>Introduction</h2>
+
+<p>This page introduces a trust management system <em>Soutei</em>. The system is essentially based on Binder. However we have
+specified many aspects left undefined in the original DeTreville's
+paper [<a href="#Binder">Binder</a>], and added several extensions.  The most
+notable extension is the disequality predicate and a type system to
+guarantee its static safety and the preservation of monotonicity.  Many
+of the extensions -- such as the interaction between an application
+and Soutei, communicating the context of the request to the decision
+engine -- are notably influenced by the KeyNote system. We have
+specified the protocol for sending Soutei assertions in HTTP requests
+and in various certificates. We have also clarified the logical
+meaning of the distinguished Binder/Soutei relation
+<code>says</code>.</p>
+
+<p>In the following, we first describe Soutei's syntax, which differs
+from that of Binder. We added numeric and IP address literals. We
+changed the syntax of variables and constants to inhibit user errors
+that may have serious security consequences. We added a disequality
+predicate, and a type system that statically ensures that disequality
+and other restricted-mode predicates are safe and do not
+destroy the overall monotonicity. A Soutei assertion that is found
+unsafe is rejected by the compiler.  We specify semantics of
+Soutei. In particular, we concentrate on the <code>application</code> context and on the logical and operational interpretations of
+<code>says</code>. We describe the use of Soutei for role-based or
+capability-based access control, and the revocation of privileges.</p>
+
+<p>Finally, we introduce a number of use cases. The cases are meant to
+illustrate notable aspects of the system -- in particular, several
+levels of trust delegation. We test both granting and rejecting user
+requests. The test cases are meant to be executable, and so to
+constitute an acceptance test of an early prototype and the regression
+test of the finished system.</p>
+
+<p>A separate page [<a href="#Transport">Transport</a>] discusses various ways of
+making Soutei assertions available to the decision engine: by querying
+trusted databases, LDAP servers, or by delivering the assertions in
+HTTP headers and in Public-key and Attribute X.509 certificates.</p>
+<br>&nbsp;<a name="Syntax">&nbsp;</a>
+<h2>Syntax of Soutei</h2>
+
+<div align="center">
+<table border="0" bgcolor="#f5dcb3">
+<tr valign="top">
+<td align="right"><a name="prod-1">[1]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;Assertion&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&lt;Statement&gt;*</code> ; also called clause</td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-2">[2]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;Statement&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&lt;Rule&gt; | &lt;Fact&gt;</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-3">[3]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;Rule&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&lt;Head&gt; &quot;:-&quot; &lt;Body&gt; &quot;.&quot;</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-4">[4]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;Head&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&lt;pAtom&gt;</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-5">[5]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;Fact&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&lt;Head&gt; &quot;.&quot;</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-6">[6]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;Body&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&lt;Atom&gt; <strong>(</strong> &quot;,&quot; &lt;Atom&gt; <strong>)</strong>*</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-7">[7]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;Atom&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&lt;cAtom&gt; | &lt;pAtom&gt;</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-8">[8]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;pAtom&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&lt;Predicate&gt; &quot;(&quot; &lt;Args&gt; &quot;)&quot;</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-9">[9]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;cAtom&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&lt;Context&gt; &quot;says&quot; &lt;pAtom&gt;</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-10">[10]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;Predicate&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&lt;symbol-constant&gt;</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-11">[11]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;Args&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&lt;Term&gt; <strong>(</strong> &quot;,&quot; &lt;Term&gt; <strong>)</strong>*</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-12">[12]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;Term&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&lt;constant&gt; | &lt;variable&gt;</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-13">[13]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;Context&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&lt;Term&gt;</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-14">[14]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;variable&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&quot;?&quot; | &quot;?&quot;&lt;id-symbol&gt;+</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-15">[15]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;constant&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&lt;string-constant&gt; | &lt;numeric-constant&gt; | &lt;symbol-constant&gt; | &lt;ip-constant&gt; | &lt;ipnetwork-constant&gt;</code> </td>
+</tr>
+</table>
+</div>
+
+<p>Clauses with the same predicate must be consecutive.</p>
+
+<p>Lexical entities:</p>
+
+<div align="center">
+<table border="0" bgcolor="#f5dcb3">
+<tr valign="top">
+<td align="right"><a name="prod-L1">[L1]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;string-constant&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&nbsp;</code> A quoted Scheme string</td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-L2">[L2]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;numeric-constant&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&nbsp;</code> A real Scheme number</td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-L3">[L3]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;symbol-constant&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&nbsp;</code> A Scheme symbol</td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-L4">[L4]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;ip-constant&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&quot;#p&quot;&lt;IP4-quad or IP6-address&gt;</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-L5">[L5]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;ipnetwork-constant&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&quot;#n&quot;&lt;IP4-quad or IP6-address&gt;&quot;/&quot;&lt;number of significant bits&gt;</code> </td>
+</tr>
+
+<tr valign="top">
+<td align="right"><a name="prod-L5">[L5]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;id-symbol&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&nbsp;</code> A lower- or upper-case character or digit that can appear in a
+Scheme symbol</td>
+</tr>
+</table>
+</div>
+
+<p>As usual, non-terminals of the grammar are separated by
+whitespace. Whitespace between two non-terminals may be elided if the
+non-terminals can still be parsed separately. A semi-colon introduces
+a comment that spans through the closest line terminator: a line-feed
+character, a carriage-return character, or a combination of line-feed
+followed by carriage-return. A comment is considered whitespace.</p>
+
+<p>The syntax differs in insignificant details from the language
+proposed in DeTreville's paper, and also from Prolog/Datalog. The main
+difference is the syntax of variables and constants. In the original
+Binder, as in Prolog on which it is based, capitalized symbols denote
+variables. The other symbols are constants. In a security language,
+symbols and variables stand for the names of people, programs, and
+computers. These names have different capitalization
+conventions. We must keep in mind that the main users of Soutei
+are not Prolog programmers. Rather, they are system and security
+administrators. Therefore, we should avoid glaring inconsistencies
+between the lexical conventions of the language and the domain.</p>
+
+<p>There is a notably important reason to make the names of Soutei
+variables stand out. In the original Binder, an assertion</p>
+<pre>     can(Pubkey,resource_r,read) :- pubkey(john,Pubkey).
+     pubkey(john,&quot;0123436&quot;).
+     pubkey(doug,&quot;abcde&quot;). ...
+</pre>allows the user <code>john</code> to read <code>resource_r</code>. However, if by mistake the administrator spelled the name of the
+user in the conventional capitalization:<pre>     can(Pubkey,resource_r,read) :- pubkey(John,Pubkey).
+</pre>
+<p>then he unwittingly allowed access to <code>resource_r</code> to
+<em>every registered user!</em> The confusion between the domain
+notation and the language notation can have grave
+consequences. Therefore, we choose to prefix the names of all variables
+with the question-mark character, to make the variable names really
+stand out. That convention hopefully inhibits the errors of great
+security consequence -- but it cannot assuredly eliminate them. We
+must subject every Soutei assertion to a policy check, described later
+on this page.</p>
+
+<p>Thus the main syntactic difference from Prolog and the original Binder is
+that in our version, the names of all variables begin with the
+question mark. A single question mark stands for the anonymous
+variable. Other symbols -- capitalized or not -- are constants. Quoted
+strings are also considered constants. In fact, we do not draw any
+semantic distinction between symbolic constants and quoted strings. If
+the name of a constant starts with a question mark or contains spaces,
+parentheses, commas and other characters that are not permitted in
+Scheme identifiers, the name of the constant must be enclosed in
+double quotes. Otherwise, the name may be enclosed in double
+quotes. All names are case-sensitive.</p>
+
+<p>We also extend the original Binder with numerical literals and
+literals for IP addresses. Internally, IP addresses are represented as
+32 or 128-bit exact integers.</p>
+
+<hr><br>&nbsp;<a name="Safety">&nbsp;</a>
+<h3>Safety of assertions</h3>
+
+<p>A Soutei assertion must satisfy safety constraints as described
+below.  An assertion that fails to satisfy the safety property is
+rejected by the compiler and cannot be added to the system.</p>
+
+<p>Our notion of safety corresponds to well-moded logical programs,
+as described in [<a href="#Mercury-Modes">Mercury-Modes</a>].  However, the treatment of
+modes in Mercury is too operational, relying on notions such as
+`predicate call' and the instantiatedness of a variable `before' and
+`after' the call. In a bottom-up evaluation, there are no notions of
+`operator call' at all.</p>
+
+<p>We are concerned about safety because of standard predicates such
+as <code>neq</code>, the disequality predicate. If used without
+restriction, the predicate destroys the formal properties of a logical
+program, e.g., the existence of a minimal model -- let alone
+monotonicity. Even the relation <code>says</code> is problematic unless
+restricted, as in <code>?X says may(read)</code> where <code>?X</code>
+is an uninstantiated variable. Should we try to enumerate all possible
+namespaces and try <code>may(read)</code> in each of them?  The
+problems with <code>neq</code> and <code>says</code> can be eliminated
+with run-time checks.  However, that is not satisfactory: the monotonicity
+property is compromised, seemingly unrelated changes to assertions may
+lead to run-time errors, the ability of the system to optimize
+assertions is restricted. Therefore, we would like to statically reject
+assertions that are unsound or can cause run-time instantiatedness
+failures. We would like to admit only those assertions that
+can assuredly be evaluated without the above problems.</p>
+
+<p>Thus we would like to introduce static safety and
+monotonicity-preservation guarantees for mode-limited predicates and
+especially for the limited form of negation -- disequality. Not only
+we have to ensure that disequality can be evaluated in the context where
+its arguments are fully instantiated. We also have to guarantee that
+that the domain of <code>neq</code> arguments is invariant of remote
+assertions. The latter preserves monotonicity: adding more
+assertions to the system does not reduce the set of allowable security
+actions. Our notion of monotonicity is identical to that of KeyNote: 
+`` An important principle in KeyNote's design is `assertion
+monotonicity'; the policy compliance value of an action is always
+positively derived from assertions made by trusted principals.
+Removing an assertion never results in increasing the compliance
+value returned by KeyNote for a given query.'' [RFC2704] [<a href="#KeyNote">KeyNote</a>]</p>
+
+<p>Like in Datalog, to make sure <code>neq</code> and similar
+predicates are safe, we introduce the notion of range-limited
+variables: variables whose set of possible values is known to be
+finite. However, the set of values may be defined by statements in
+remote namespaces (assertions), which may need to be fetched and may
+be unavailable due to network failures, etc. It is imperative to avoid
+the situation where the system grants a request that would have been
+denied had the network had operated normally.</p>
+
+<p>Therefore, we introduce <em>statically range limited
+variables</em>: whose range of values is fully known at the time the
+query begins evaluation. For example, given <code>application says
+ipaddress(?IP)</code>, we know that the variable <code>?IP</code> is
+statically range limited, because the set of its possible values --
+which is one, the IP address of the requesting client -- is fully known
+at the time query begins evaluation. Similarly, if a namespace
+defines a predicate <code>access_mode</code> by the two clauses:
+<code>access_mode(read). access_mode(write).</code> then the variable
+<code>?X</code> in an atom <code>access_mode(?X)</code> is statically
+range limited because the set of possible values for <code>?X</code>
+is known and does not depend on any remote assertions.</p>
+
+<p>To formulate statically verifiable safety conditions, we introduce
+the following type system.</p>
+
+<p>Terms are associated with one of the three types:</p>
+
+<ul>
+<li><strong><code>S</code></strong> -- Statically range limited</li>
+
+<li><strong><code>L</code></strong> -- Range limited</li>
+
+<li><strong><code>A</code></strong> -- Any, including uninstantiated</li>
+</ul>
+
+<p>The types are ordered: <code>A &lt; L &lt; S</code>. We let the
+meta-variable <code>ttype</code> range over these term types.</p>
+
+<p>Every argument of a predicate and the first argument of the
+relation <code>says</code> are assigned one of the following types:
+<strong><code>PS</code></strong>, <strong><code>PL</code></strong>, <strong><code>RS</code></strong>, <strong><code>RL</code></strong>, <strong><code>A</code></strong>. Here the
+letter P stands for `provides' and the letter R stands for
+`required'. The types are ordered: <code>RS &lt; RL &lt; A &lt; PL &lt; PS</code>. We let the meta-variable <code>ptype</code> range over these types.</p>
+
+<p>The first argument of the relation <code>says</code> has the type
+<code>RL</code>. Predicates in the <code>application</code> namespace
+have the types assigned to them.  The types of other predicates are
+inferred.</p>
+
+<p>Informally, an assertion is safe if all the following three
+conditions hold:</p>
+
+<ul>
+<li>the type of every argument of every predicate defined in the
+assertion is inferred to be <code>PL</code> or <code>PS</code>,</li>
+
+<li>in every atom, if a predicate argument type is <code>RS</code>, the 
+corresponding argument term has the type <code>S</code>,</li>
+
+<li>in every atom, if a predicate argument type is <code>RL</code>, the 
+corresponding argument term has the type <code>L</code> or <code>S</code>.</li>
+</ul>
+
+<p>The following is a formal system to determine the safety of an
+assertion.  The results can also be used to reorder conjunctions.</p>
+
+<p>Meta-variables:</p>
+
+<ul>
+<li><code>term</code> -- term</li>
+
+<li><code>atom</code> -- atom</li>
+
+<li><code>atom*</code> -- perhaps empty sequence of atoms</li>
+
+<li><code>atom+</code> -- a non-empty sequence of atoms</li>
+
+<li><code>var</code> -- variable</li>
+
+<li><code>ttype</code> -- term type</li>
+
+<li><code>ptype</code> -- predicate argument type</li>
+
+<li><code>pred/n</code> -- a predicate, local or context-qualified, of
+arity <code>n</code>. The arity may be omitted if understood from the
+context.</li>
+
+<li><code>i</code> -- <code>1..n</code>, where <code>n</code> is the
+arity of the predicate in question.</li>
+
+<li><code>c</code> -- ranges over all clauses that define a predicate
+in question.</li>
+</ul>
+
+<p>The meta-constant <code>[]</code> stands for an empty sequence.</p>
+
+<p>The notation <code>pred/n<sub>i</sub></code> specifies the argument <code>i</code> of the predicate <code>pred/n</code>, whereas <code>pred/n<sup>c</sup><sub>i</sub></code>
+specifies the argument <code>i</code> of the predicate <code>pred/n</code> that appears in the head of the clause <code>c</code>.</p>
+
+<p>Meta-functions:</p>
+
+<ul>
+<li><code>Clauses(pred/n)</code> -- all clauses that define the local predicate <code>pred/n</code></li>
+
+<li><code>FV(atom)</code> -- variables that appear in <code>atom</code></li>
+
+<li><code>Dom(Gamma)</code> -- domain of a type environment</li>
+
+<li><code>GExt(Gamma,var,ttype)</code> -- extension of the type environment,
+defined below</li>
+</ul>
+
+<p>Predicate typing judgments:</p>
+
+<p><code>|-<sub>pi</sub> pred/n<sub>i</sub>:ptype</code> asserts that the argument <code>i</code> of
+the predicate <code>pred/n</code> has the type <code>ptype</code>.</p>
+
+<p>Axioms for the types of predicates</p>
+
+<p><code>===&gt; |-<sub>pi</sub> says<sub>1</sub>:RL</code></p>
+
+<p><code>===&gt; |-<sub>pi</sub> application says pred<sub>i</sub>:ptype See the section about the application namespace.</code></p>
+
+<p><code>===&gt; |-<sub>pi</sub> term says pred<sub>i</sub>:PL</code></p>
+
+<p><code>forall c in Clauses(pred/n).|-<sub>pi</sub> pred/n<sup>c</sup><sub>i</sub>:ptype_c
+<br>ptype is lwb ptype_c
+<br>===&gt; |-<sub>pi</sub> pred/n<sub>i</sub>:ptype</code></p>
+
+<p><code>Clause c of pred/n is a fact
+<br>===&gt; forall i in n.|-<sub>pi</sub> pred/n<sup>c</sup><sub>i</sub>:PS</code></p>
+
+<p><code>Clause c of pred/n is a rule
+<br>===&gt; forall i in n.|-<sub>pi</sub> pred/n<sup>c</sup><sub>i</sub>:PL</code></p>
+
+<p>Type environment</p>
+
+<p>The type environment Gamma associates variables within a clause
+with their <code>ttype</code>s.</p>
+
+<table border="0" bgcolor="#f5dcb3">
+<tr valign="top">
+<td align="right"><a name="prod-Gamma">[Gamma]</a>&nbsp;</td>
+
+<td align="right"><code>&lt;Gamma&gt;</code></td>
+
+<td align="center"><code> ::= </code></td>
+
+<td align="left"><code>&quot;[]&quot; | <strong>(</strong> &lt;var : ttype&gt; &quot;,&quot; &lt;Gamma&gt; <strong>)</strong></code> </td>
+</tr>
+</table>
+
+<p>The extension function of the environment <code>GExt(Gamma,var,ttype)</code> is defined as follows:</p>
+
+<p><code>var not in 
+<br>Dom(Gamma)
+<br>===&gt; var : ttype, Gamma</code></p>
+
+<p><code>var : ttype1 in Gamma
+<br>ttype2 = max ttype ttype1
+<br>===&gt; var : ttype2, Gamma\var</code></p>
+
+<p>Typing of terms</p>
+
+<p><code>Gamma|-<sub>t</sub> term:ttype</code> asserts that the term has a <code>ttype</code> in the typing environment Gamma.</p>
+
+<p><code>===&gt; Gamma|-<sub>t</sub> constant:S</code></p>
+
+<p><code>ttype1 &lt;= ttype
+<br>===&gt; x:ttype, Gamma|-<sub>t</sub> x:ttype1</code></p>
+
+<p>Typing of the body of the rule: a sequence of atoms</p>
+
+<p><code>Gamma|-<sub>ok</sub> atom*</code> asserts that the sequence of atoms is well-typed
+in the type environment Gamma.</p>
+
+<p><code>===&gt; []|-<sub>ok</sub> []</code></p>
+
+<p><code>Gamma|-<sub>ok</sub> atom*
+<br>ti is a var
+<br>&nbsp;|-<sub>pi</sub> pred/n<sub>i</sub>:PL, Gamma' = GExt(Gamma,ti,L)
+<br>OR
+<br>&nbsp;|-<sub>pi</sub> pred/n<sub>i</sub>:PS, Gamma' = GExt(Gamma,ti,S)
+<br>===&gt; Gamma'|-<sub>ok</sub> pred/n(t1,...tn), atom*</code></p>
+<h4>Safety conditions of clauses</h4>
+<p><code>|-<sub>s1</sub> clause</code> asserts that the clause satisfies the safety
+condition 1.  This is the safety condition in the Datalog sense: a
+<code>&lt;Head&gt;</code> must not contain variables that are not
+used in its <code>&lt;Body&gt;</code>. In particular, a
+<code>&lt;Fact&gt;</code> may not contain any variables at all. Another way
+to look at this safety condition is as the justification of the
+inductive assumption in the typing of predicates.</p>
+
+<p><code>c is head :- []
+<br>FV(head) is []
+<br>===&gt; |-<sub>s1</sub> c</code></p>
+
+<p><code>c is head :- atom+
+<br>Gamma|-<sub>ok</sub> atom+
+<br>forall v in FV(head).Gamma|-<sub>t</sub> x:L
+<br>===&gt; |-<sub>s1</sub> c</code></p>
+
+<p><code>|-<sub>s2</sub> clause</code> and <code>|-<sub>s3</sub> clause</code> assert that the clause
+satisfies safety conditions 2 resp. 3.</p>
+
+<p><code>c is head :- atom*
+<br>Gamma|-<sub>ok</sub> atom+
+<br>forall pred/n(t1,...tn) in atom*.forall ti in (t1,...tn).|-<sub>pi</sub> pred/n<sub>i</sub>:RS --&gt; Gamma|-<sub>t</sub> ti:S
+<br>===&gt; |-<sub>s2</sub> c</code></p>
+
+<p><code>c is head :- atom*
+<br>Gamma|-<sub>ok</sub> atom+
+<br>forall pred/n(t1,...tn) in atom*.forall ti in (t1,...tn).|-<sub>pi</sub> pred/n<sub>i</sub>:RL --&gt; Gamma|-<sub>t</sub> ti:L
+<br>===&gt; |-<sub>s3</sub> c</code></p>
+
+<p>The whole Soutei assertion is safe if every clause of it satisfies
+all three safety conditions.</p>
+
+<hr><br>&nbsp;<a name="Semantics">&nbsp;</a>
+<h2>Semantics of Soutei assertions</h2>
+
+<p>A Soutei engine acts as a compliance checker that provides advice
+to applications regarding specific actions. Actions and accompanying
+data are described in terms of constants, atoms and
+assertions. Assertions are grouped into named <code>&lt;Context&gt;</code>s, which are also called namespaces. To be more precise,
+each <code>&lt;Atom&gt;</code> is associated with a particular
+<code>&lt;Context&gt;</code>, via the distinguished predicate
+<code>says</code>. There is also a local context for each
+assertion. The local context is imputed to each atom without an
+explicit context association. A context is identified by its name,
+which is related to the issuer of the corresponding security
+assertion. For example, the context identifier can be issuer's
+distinguished name in a LDAP database. Alternatively, the context
+identifier may be the issuer's public key or a hexadecimal string
+encoding a SHA-1 hash of issuer's subject name. Such a hash is used in
+OpenSSL as an index in a directory of certificates. The Soutei engine
+treats context identifiers as opaque strings, with the exception of
+two distinguished context names: <code>system</code> and <code>application</code>.</p>
+
+<p>The Soutei engine starts up with an initial assertion, which has a
+distinguished name <code>system</code>. The initial assertion is
+normally written by the server security administrator and is placed
+into a trusted configuration file.</p>
+
+<p>An application invokes the Soutei engine by issuing a query. The
+application gives the engine the context with a distinguished
+name <code>application</code>. Rules and facts in the application
+context describe the client and the requested action. The application
+context also includes built-in predicates such as <code>ip_of/2</code>, and the distinguished predicate <code>says/2</code>.</p>
+
+<p>The application asks the Soutei engine to prove an atom such
+as</p>
+<pre>     system says may(X,Y,Z)
+</pre>
+<p>where X,Y,Z are the constants or variables that represent the
+resource, the action, or the principal. See the use cases below for
+more detail. The Soutei engine replies if the atom can be derived from
+the assertions at hand. If the atom can be proved, the engine returns
+a set of substitutions for the variables in the atom. If more than one
+set of substitutions prove the atom, only the first found set is
+returned.</p>
+
+<p>We should stress that the predicate <code>may</code> is not
+built-in. It is just the agreement between a particular application
+and a policy writer. An application may choose to ask for
+authorization advice using a different predicate with a different
+number of parameters.</p>
+<br>&nbsp;<a name="Application Context">&nbsp;</a>
+<h3>Application Context</h3>
+
+<p>The application context defines facts and rules describing the
+authorization query. The context also defines built-in predicates. All
+statements in the application context are considered to be
+non-recursive. Hence the application context is implicitly an
+extensional database.</p>
+
+<p>Statements of the application context describing the action and
+the request:</p>
+
+<dl>
+<dt><code>ipaddress/1</code></dt>
+
+<dd>A predicate for the IP address of the client requesting the
+authorization decision.</dd>
+
+<dd><code>|-<sub>pi</sub> ipaddress/1<sub>1</sub>:PS</code></dd>
+
+<dt><code>pubkey_fingerprint/1</code></dt>
+
+<dd>A predicate for the public key fingerprint (i.e., the subject
+identity) of the requesting client.</dd>
+
+<dd><code>|-<sub>pi</sub> pubkey_fingerprint/1<sub>1</sub>:PS</code></dd>
+
+<dt><code>access_mode/1</code></dt>
+
+<dd>Access modes permitted by the application</dd>
+
+<dd><code>|-<sub>pi</sub> access_mode/1<sub>1</sub>:PS</code></dd>
+</dl>
+
+<p>Additional predicates such as client's distinguished name or
+client's voice fingerprint can easily be added if a particular policy
+requires that.</p>
+<br>&nbsp;<a name="Built-in">&nbsp;</a>
+<h3>Built-in predicates</h3>
+
+<p>The application context may provide built-in utility predicates.</p>
+
+<dl>
+<dt><code>ip_of/2</code></dt>
+
+<dd>An atom <code>ip_of(ip,ipnet)</code> is provable if the IP
+address <code>ip</code> is a part of the network <code>ipnet</code>,
+specified as an IP network literal.</dd>
+
+<dd><code>|-<sub>pi</sub> ip_of/2<sub>1</sub>:RL</code></dd>
+
+<dd><code>|-<sub>pi</sub> ip_of/2<sub>2</sub>:RS</code></dd>
+
+<dt><code>neq/2</code></dt>
+
+<dd>The disequality predicate. It asserts that its two arguments
+are provably not equal. The equality is structural.</dd>
+
+<dd><code>|-<sub>pi</sub> neq<sub>1</sub>:RS</code></dd>
+
+<dd><code>|-<sub>pi</sub> neq<sub>2</sub>:RS</code></dd>
+</dl>
+<br>&nbsp;<a name="says">&nbsp;</a>
+<h3>says predicate</h3>
+
+<p>The application context also contains a distinguished predicate
+<code>says/2</code>. An atom <code>says(context_id,pAtom)</code> is
+provable if and only if the atom <code>pAtom</code> is provable in the
+context <code>context_id</code>.</p>
+
+<p><code>|-<sub>pi</sub> says<sub>1</sub>:RL</code></p>
+
+<p>When the application receives a Soutei assertion the application
+determines the issuer and derives the context identifier.  If the
+assertion was signed, the application checks the signature. The
+application then compiles the assertion and, barring any errors,
+extends the predicate <code>says/2</code> with the compiled assertion
+and <code>context_id.</code> Normally the application will cache received
+assertions for some time (not exceeding the validity interval of the
+certificate used to sign or carry the assertion). The predicate
+<code>says/2</code> therefore is an abstraction of that cache. The
+application uses the signature bits of the signed certificate to
+quickly determine if the received certificate is already in the
+cache. If the received assertion is a part of an attribute certificate
+with a non-empty holder, the assertion may not be cached. The
+assertion can only be used for authorization decisions regarding the
+holder.</p>
+<br>&nbsp;<a name="Logical">&nbsp;</a>
+<h3>Logical interpretation of <code>says</code></h3>
+
+<p>The original Binder paper [<a href="#Binder">Binder</a>] treats <code>says</code> as a quotation mark for imported assertions. In that
+interpretation, ``context says'' is a modality of an atom. We however
+interpret <code>says</code> in a different way. In our view, <code>A says B</code> means <code>A |- B</code>. The context identifier
+becomes the denotation for a set of assumptions in a
+natural-deduction-like proof. This view appears to be closely related
+to a definitional logic of D.Miller, R.McDowell and
+A.Tiu. Interestingly, this interpretation of <code>says</code> does
+not seem to be mentioned in any of the papers related to Binder.</p>
+
+<p>Treating <code>says</code> as the entailment relation lends
+itself to a simple realization of Soutei in any (meta-)logic system
+with first-class relations, such as [<a href="#KANREN">KANREN</a>]. The examples
+of induction proofs in KANREN illustrate the first-class treatment of
+rules and facts. The Binder paper evaluates a set of assertions by
+importing them all into one context, quoting their rules
+correspondingly. We, on the other hand, refer to other contexts but do
+not import them. We search for a proof of a formula in the context of
+a particular assertion.</p>
+
+<hr><br>&nbsp;<a name="Using">&nbsp;</a>
+<h2>Using Soutei</h2>
+<br>&nbsp;<a name="Role-based">&nbsp;</a>
+<h3>Role-based access control and Soutei</h3>
+
+<p>Role-based access control is a popular authorization technique. A
+trust management system [<a href="#KeyNote">KeyNote</a>] is a far more general
+mechanism that can trivially implement the most complex role-based
+authorizations. The Soutei engine, for example, bases its decisions
+entirely on the client identifiers provided by the requesting
+application. These identifiers may correspond to a particular user --
+or to a particular role of that user. Soutei supports delegation by a
+principal of a (subset) of its privileges to another principal. A user
+therefore can delegate subsets of his permissions to various
+applications, agents, or representations of himself. Each such agent
+corresponds therefore to a particular role played by the user. Such a
+delegation is especially trivial if we chose Attribute certificates as
+the transport mechanism for Soutei assertions. A user can sign a
+number of attribute certificates based off his public key certificate
+-- each attribute certificate for a particular role and for a particular
+agent.</p>
+
+<p>The Soutei engine lets the policy author specify hierarchies of
+roles and impose side conditions, e.g., a particular role can be used
+only if the request comes from a particular network or designated
+hosts.</p>
+<br>&nbsp;<a name="Capabilities">&nbsp;</a>
+<h3>Capabilities and Soutei</h3>
+
+<p>The client identifier and the context identifier are treated by
+Soutei as opaque strings. The identifiers may be meaningful
+descriptions of real people, e.g., their e-mail or postal
+addresses. On the other hand, the identifiers may be meaningless
+unique strings that are given by an administrator to a client in a
+certificate or in some other assured way. The administrator can keep
+in a special context the record of these unique strings associated
+with human readable names of his choice:</p>
+<pre>     capability(&quot;Dennis&quot;,&quot;RGVubmlzSnVsMjM=&quot;).
+     capability(&quot;John from the second floor, for a printer&quot;,
+                &quot;Sm9obiBmcm9tIHRoZSBzZWNvbmQgZmxvb3IsIGZvciBhIHByaW50ZXI=&quot;).
+</pre>If that context has the name <code>capabilities</code>, the policy
+writer can use the human readable identifiers in his policies, for
+example:<pre>     may(printer,?id) :- capabilities says 
+                             capability(&quot;John from the second floor, for a printer&quot;,
+                                        ?id), ...
+</pre>or, if the fact the capability exists is sufficient,<pre>     may(printer,?id) :- capabilities says capability(?,?id), ...
+</pre>
+<p>The re-direction afforded by the context such as <code>capabilities</code> can solve the ``stale resource name problem'': when
+a resource is deleted, all access permissions to it should be
+terminated. If another resource is created later with the same name,
+the users of the old resource should not automatically have any access
+rights to the new resource. In Soutei, resource names have no
+particular significance and treated as opaque strings.  The naming
+conventions and the vocabulary of resources are defined exclusively by
+requesting applications. Some applications may name the resource after
+the SHA-1 hash of its content. Such names are effectively unique. We
+can use translation contexts such as <code>capabilities</code> to
+associate the unique names with some other attributes to help write
+policies. The context names are themselves first-class and can be
+associated with attributes in other contexts. Soutei lets policy
+writers implement as extensive chains of reference and redirection as
+necessary.</p>
+<br>&nbsp;<a name="Policies predicated on time">&nbsp;</a>
+<h3>Policies predicated on time</h3>
+
+<p>Soutei readily admits policies predicated on time: for example,
+the following statement permits write access to a file only during
+business hours, subject to supervisor's approval: </p>
+<pre>     may(&quot;untitled.doc&quot;,write) :-
+       application says this-period(business-hours),
+       supervisor says may(&quot;untitled.doc&quot;,write).
+</pre>
+<p>In contrast, the following statement permits write access outside
+business hours:</p>
+<pre>     may(&quot;untitled.doc&quot;,write) :-
+       application says this-period(?period),
+       application says neq(?period,business-hours),
+       supervisor says may(&quot;untitled.doc&quot;,write).
+</pre>
+<p>It is of course the job of the application to define what
+constitutes business hours, and to determine if the time of the
+request falls within that definition. The above examples assumed that
+the application communicates its determination to Soutei via the
+predicate <code>this-period/1</code>. An application programmer and a
+policy writer could have chosen a different predicate and a different
+set of terms for time intervals. The Soutei engine
+could care less: the engine does not determine time. The engine merely
+checks if application-provided facts about application-introduced terms
+<em>syntactically</em> conform to the rules of the policy.</p>
+
+<p>The next section explains how to introduce temporal order among
+the time intervals and to use it in policies.</p>
+<br>&nbsp;<a name="Lists, trees, organizational charts, and partial orders">&nbsp;</a>
+<h3>Lists, trees, organizational charts, and partial orders</h3>
+
+<p>So far, the policies were relating terms -- e.g., file names, access
+rights -- based solely on their equality or disequality. Some
+application domains however, such as time intervals, clearances,
+organizational charts, are ordered. We would like therefore to
+write policies that take the order into account, e.g., to permit
+access to a resource only if the user has clearance ``confidential''
+<em>and above</em>.</p>
+
+<p>One may doubt at first if such policies are at all expressible in
+Soutei: after all, terms in Datalog lack any structure and so can be
+compared only for equality. However, it is the fact that logic without
+function symbols is equivalent to logic with function symbols, <em>provided</em> the unlimited supply of constants. For example, the
+following assertion named <code>user-list</code> represents the list of
+three elements, <code>user1</code>, <code>user2</code>, <code>user3</code>, in that order:</p>
+<pre>     list(l1).
+     list-el(l1,user1,l2).
+     list-el(l2,user2,l3).
+     list-el(l3,user3,nil).
+</pre>The distinguished constant nil represents the empty list. Now we can
+write<pre>     user-list says list(?l),
+     user-list says list-el(?l,?,?ln),
+     user-list says list-el(?ln,?user,?)
+</pre>to find out the name of the second user.
+<p>The adjacency predicates such as <code>list-el</code> let us
+specify arbitrary trees, lattices and partial orders. For example, we
+can represent an organizational chart as the following assertion: </p>
+<pre>     reports-to(VP-sales,CEO).
+     reports-to(VP-development, CEO).
+     reports-to(CFO,CEO).
+     reports-to(dept-sales-Japan,VP-sales).
+     reports-to(dept-sales-US,VP-sales).
+     reports-to(QA,VP-development).
+     reports-to(OS-division,VP-development).
+     reports-to(filesystem-group,OS-division).
+</pre>If the above assertion is named <code>org-chart</code>, we can use it
+to write the policy that permits access to a document named
+``development milestones'' only to those employees that belong to the
+development branch, from VP-development downwards:<pre>     may(&quot;development milestones&quot;,?access) :-
+       known-access(?access),
+       application says this-user-div(?user,?ou),
+       path(?ou,VP-development).
+     
+     path(?x,?x) :- org-chart says reports-to(?x,?). ; reflectivity
+     path(?x,?x) :- org-chart says reports-to(?,?x). ; reflectivity
+     path(?x,?y) :- org-chart says reports-to(?x,?y).
+     path(?x,?y) :- path(?x,?z), org-chart says reports-to(?z,?y).
+</pre>Incidentally, the last clause of the path predicate exhibits left
+recursion. Soutei can deal with it. The path predicate will work even
+if the organizational chart is not a tree (e.g., two VPs share the
+responsibility for same department) and has cycles.  The example
+assumed that the application tells the engine about the organizational
+position of the requester via the predicate <code>this-user-div/2</code>. That data could be extracted from the employee's
+PKI certificate, for example.
+<p>We can also write a policy that permits access to a document
+``proposed reorg'' to employees in the OS-division and <em>all</em> their
+managers up the chain:</p>
+<pre>     may(&quot;proposed reorg&quot;,read) :- 
+       application says this-user-div(?user,?ou),
+       path(OS-division,?ou).
+</pre>
+<p>The assertion <code>org-chart</code> can be managed by a dedicated
+person in an HR department, for example, to reflect changes in the
+organizational structure. Unless the OS division is renamed, the above
+policy needs no modifications. For example, a restructuring in sales 
+has no effect on the above policy, as it should not. If a new
+position of COO is introduced to whom VP-development reports, the COO
+could immediately read the ``proposed reorg'' document under the
+policy.</p>
+
+<p>It remains an interesting question the extent to which Soutei can
+emulate authorization systems such as constrained RT and others that
+explicitly deal with hierarchies, intervals and structured domains.</p>
+<br>&nbsp;<a name="Revocation">&nbsp;</a>
+<h3>Revocation</h3>
+
+<p>Just like KeyNote and Binder, the Soutei engine has the property
+of monotonicity: making more assertions known to the engine may
+potentially cause more authorization queries to be answered
+affirmatively -- but never fewer. Therefore, withholding an assertion
+from the decision engine can never cause the engine to advise an
+action that the engine will not advise otherwise.</p>
+
+<p>The monotonicity property however makes the revocation of
+previously granted privileges challenging (although the disequality
+predicate <code>neq/2</code> can greatly help here). We must first
+remark that handling of revocations greatly depends on the chosen
+mechanism of delivery of assertions to the engine.</p>
+
+<p>If we use LDAP or other trusted database to store all assertions,
+and configure the Soutei engine to consult the database on each
+request or frequently enough, revocation becomes trivial. Removing
+from the database the assertion that originally granted the privilege
+to a particular client automatically revokes the privilege.</p>
+
+<p>If assertions are delivered to the engine in signed messages or
+certificates, the validity of the certificate determines the validity
+of the assertion. If the certificate is expired, the corresponding
+assertion is effectively revoked. It is argued [<a href="#Transport">Transport</a>]
+that X.509 Attribute certificates are the most appropriate kind of
+certificates for Soutei assertions. Such certificates correspond to
+roles of the user or his agent, and are supposed to be issued for a
+very short validity period.</p>
+
+<p>Hybrid assertion transport mechanisms lend themselves to flexible
+revocation strategies. For example, a policy can include the
+statement:</p>
+<pre>     may(resource,?user,read) :- Admin says may(resource,?user,read),
+                                 LDAP says valid_user(?user).
+</pre>That is, access to the resource is granted if <em>both</em>
+statements can be proved: that Admin has granted the access right to the
+user and that LDAP says the user is valid. The administrator may
+grant the user privileges by giving him the corresponding
+certificate. The user must present the certificate with his
+requests. Proving <code>LDAP says valid_user(?user)</code> on the other
+hand may involve an <em>on-line</em> check for the user in a trusted LDAP
+database. Removing the user identifier from that database instantly
+and effectively revokes the certificate Admin gave to the user.
+<p>We should also point out that if a client receives access to a
+resource via a delegation chain, removing the delegating assertion
+from anywhere in the chain terminates the access. At least one
+assertion in the chain -- the top one -- must come from a trusted
+source, a local configuration file. Assertions that come from such
+sources are easy to revoke.</p>
+
+<p>Finally, the disequality predicate makes it easy to revoke access
+for a specific user (a client on a specific network, etc). We should
+modify the top, <code>system</code> assertion or other such assertion
+by inserting an atom like <code>neq(?IPAddress,#p10.10.1.127)</code>. No other assertion in the system and in delegation chains has to
+be modified. The revocation takes effect immediately and we are sure of
+that.</p>
+
+<hr><br>&nbsp;<a name="Use">&nbsp;</a>
+<h2>Use cases</h2>
+
+<p>The slides from the June 7, 2005 demo of Soutei and its integration
+with Navy Enterprise Single Sign-On (NESSO) and GIG-Lite (formerly,
+Metcast) Channels can be found in the
+<code>demo/metcast-channels/doc/</code> directory of the
+Soutei distribution.
+<br>The demo included examples of
+delegation and Risk Adaptable Access Control (RAdAC).</p>
+
+<p>&nbsp;</p>
+
+<p>To formulate the following executable use cases, we need to have a
+particular installation of Soutei in mind. We have chosen Metcast
+Channels [<a href="#Metcast-Channels">Metcast-Channels</a>]. For the cases below, we have also chosen the
+assertion delivery mechanism: signed messages or X.509 certificates.</p>
+
+<p>We start with the Metcast Channel database containing two empty
+test channels <code>MEMO</code> and <code>DEMO-IMG</code>. We wish to
+let any FNMOC client read and write <code>MEMO</code>. We let only
+one remote user, named Joe, access the channel. We assign the user
+Dean to be the administrator of DEMO-IMG. Dean shall control the
+access to that channel.</p>
+
+<p>To control the access to Metcast databases, we introduce a predicate
+<code>may/3</code>. The atom <code>may(database, resource, right)</code> is provable if the requesting client has <code>right</code> to access
+a particular Metcast <code>database</code> named <code>resource</code>.</p>
+
+<p>The Initial assertion:</p>
+<pre>     may(channel,MEMO,?a) :- application says ipaddress(?IP),
+                             internal(?IP), access(?a).
+     may(channel,MEMO,?a) :- known_user(Joe), access(?a).
+     
+     may(channel,&quot;DEMO-IMG&quot;, ?Access) :-
+                 pubkey(Dean,?Dean_key),
+                 ?Dean_key says may(channel,&quot;DEMO-IMG&quot;, ?Access).
+     
+     internal(#p10.10.1.1).
+     internal(?IP) :- application says ip_of(?IP,#n192.168.0.0/16).
+     
+     known_user(?user) :- pubkey(?user,?key), pubkey_fingerprint(?key).
+     
+     pubkey(Dean,&quot;abcdef&quot;).
+     pubkey(Joe,&quot;0123456789&quot;).
+       ; Convenient abbreviations
+     pubkey_fingerprint(?x) :- application says pubkey_fingerprint(?x).
+     access(?a)             :- application says access_mode(?a).
+</pre><a name="Local-MEMO">&nbsp;</a>
+<h3>Scenario Local-MEMO</h3>
+Local access to MEMO
+<ul>
+<li><a name="init">&nbsp;</a>
+<ul>
+<li>Start the Soutei engine and load the initial assertions</li>
+</ul>
+
+<br>&nbsp;</li>
+
+<li><a name="local-MEMO-1">&nbsp;</a>
+<ul>
+<li>Write the document into MEMO from within FNMOC</li>
+
+<li>Read the document back</li>
+
+<li>Write another document from a metnet host</li>
+
+<li>Read both documents</li>
+</ul>
+Expect: All operations must succeed
+<br>&nbsp;</li>
+</ul>
+<a name="Remote-MEMO">&nbsp;</a>
+<h3>Scenario Remote-MEMO</h3>
+Remote access to MEMO
+<ul>
+<li><a name="r-memo-init">&nbsp;</a>
+<ul>
+<li>See Scenario Local-MEMO through the point <a href="#local-MEMO-1">local-MEMO-1</a>
+</li>
+</ul>
+
+<br>&nbsp;</li>
+
+<li><a name="MEMO-Basic-authentication-checks">&nbsp;</a>
+<ul>
+<li>An attempt to access the MEMO channel in plain HTTP</li>
+
+<li>Read the MEMO channel via HTTPS, but supplying no client
+public-key certificate</li>
+
+<li>Read the MEMO channel via HTTPS, supplying an invalid
+client certificate (untrusted CA)</li>
+
+<li>Read the MEMO channel via HTTPS, supplying an expired
+certificate</li>
+
+<li>Read the MEMO channel via HTTPS, using a valid certificate,
+issued to the user Dean</li>
+</ul>
+Expect: All attempts should be denied and logged.
+<br>&nbsp;</li>
+
+<li><a name="MEMO-remote-OK">&nbsp;</a>
+<ul>
+<li>Write a document into the MEMO channel using HTTPS and a valid client public-key certificate issued to the user Joe</li>
+
+<li>Read from the MEMO channel using HTTPS and the same
+certificate</li>
+</ul>
+Expect: The channel should contain three documents. The remote
+user should obtain these three documents.
+<br>&nbsp;</li>
+</ul>
+<a name="DEMO-IMG-simple">&nbsp;</a>
+<h3>Scenario DEMO-IMG-simple</h3>
+Access to DEMO-IMG by its administrator. Simple authorizations.
+<ul>
+<li><a name="init">&nbsp;</a>
+<ul>
+<li>Start the Soutei engine and load the initial assertions</li>
+</ul>
+
+<br>&nbsp;</li>
+
+<li><a name="init-tests-DEMO-IMG">&nbsp;</a>
+<ul>
+<li>Try to write into DEMO-IMG from within FNMOC</li>
+
+<li>Try to read from DEMO-IMG via HTTP</li>
+
+<li>Try to read from DEMO-IMG via HTTPS without providing any client certificate</li>
+
+<li>User Joe tries to read DEMO-IMG with his certificate</li>
+
+<li>User Dean tries to read DEMO-IMG with his certificate</li>
+</ul>
+Expect: All attempts should be denied and logged.
+<br>&nbsp;</li>
+
+<li><a name="Dean-allows-himself">&nbsp;</a>User Dean allows the full access to DEMO-IMG for himself.
+<br>Dean issues an attribute certificate with the assertion <code>may(channel,DEMO-IMG,?a) :- application says access_mode(?a).</code>. Dean specifies himself as the holder of the certificate.
+<ul>
+<li>Dean sends his attribute certificate and his public-key certificate over HTTPS (in the header?) and writes a sample image into DEMO-IMG</li>
+
+<li>The same but attempting to read the channel</li>
+</ul>
+Expect: Channel should have the sample image.  Dean was able to
+read it. Because the certificate has a non-empty holder name, the
+assertion is not added to the assertion cache.
+<br>&nbsp;</li>
+
+<li><a name="DEMO-IMG-check-rejections">&nbsp;</a>
+<ul>
+<li>User Joe tries to read DEMO-IMG over HTTPS, with authentication</li>
+
+<li>Dean sends his attribute certificate and his public-key
+certificate over HTTPS and attempts to read the channel MEMO</li>
+
+<li>Joe tries to use Dean's attribute certificate from <a href="#Dean-allows-himself">Dean-allows-himself</a>
+ to read DEMO-IMG. User Joe sends the certificate in an
+HTTP header and or? TLS</li>
+
+<li>User Dean tries to read DEMO-IMG without providing the
+attribute certificate</li>
+</ul>
+Expect: All attempts should be denied and logged.
+<br>&nbsp;</li>
+
+<li><a name="DEMO-IMG-simple-authorization">&nbsp;</a>Dean directly authorizes a user to access the channel.
+<br>Dean issues an attribute certificate with the assertion <code>may(channel,DEMO-IMG,?a) :- application says access_mode(?a).</code> for the user Aaron.
+<ul>
+<li>Aaron sends the attribute certificate and his public-key certificate over HTTPS (in the header?) and reads the sample image from DEMO-IMG</li>
+</ul>
+Expect: Aaron should get the image. The certificate is not cached.
+<br>&nbsp;</li>
+</ul>
+<a name="DEMO-IMG-delegation-1">&nbsp;</a>
+<h3>Scenario DEMO-IMG-delegation-1</h3>
+Access delegation via assertions.
+<ul>
+<li><a name="demo-img-init">&nbsp;</a>
+<ul>
+<li>Run Scenario DEMO-IMG-simple through the point <a href="#init-tests-DEMO-IMG">init-tests-DEMO-IMG</a>
+</li>
+</ul>
+
+<br>&nbsp;</li>
+
+<li><a name="demo-img-delegation-1">&nbsp;</a>Dean allows Eric to read from any channel he can read.
+<br>Dean issues an attribute certificate with the assertion <pre>     may(channel,DEMO-IMG,read) :- known_user(Eric).
+     known_user(Eric) :- 
+               application says pubkey_fingerprint(&quot;dddddd&quot;).
+</pre> and the empty holder field and a validity period of one hour.
+<ul>
+<li>Eric sends the attribute certificate and his public-key
+certificate over HTTPS (in the header?) and reads a sample image from
+DEMO-IMG</li>
+
+<li>Eric attempts to read the channel again but without
+providing the attribute certificate</li>
+</ul>
+Expect: Eric reads the image both times. Dean's assertion is
+added to the assertion cache.
+<br>&nbsp;</li>
+
+<li><a name="demo-img-delegation-1-rej">&nbsp;</a>
+<ul>
+<li>Joe attempts to read the channel DEMO-IMG.</li>
+
+<li>Eric sends the attribute certificate and his public-key
+certificate over HTTPS (in the header?) and attempts to write another
+sample image into DEMO-IMG</li>
+
+<li>Eric sends the attribute certificate and his public-key
+certificate over HTTPS (in the header?) and attempts to read MEMO</li>
+
+<li>Eric attempts to read DEMO-IMG after one hour has passed</li>
+</ul>
+Expect: All attempts should be denied and logged. Dean's
+assertion should no longer be in the assertion cache.
+<br>&nbsp;</li>
+
+<li><a name="demo-img-delegation-1-rej-2">&nbsp;</a>
+<ul>
+<li>Joe attempts to read the channel DEMO-IMG providing the
+renewed Dean's certificate</li>
+</ul>
+Expect: All attempts should be denied and logged. Dean's assertion is added to the assertion cache.
+<br>&nbsp;</li>
+</ul>
+<a name="DEMO-IMG-delegation-2">&nbsp;</a>
+<h3>Scenario DEMO-IMG-delegation-2</h3>
+Chained delegation via assertions.
+<ul>
+<li><a name="demo-img-init">&nbsp;</a>
+<ul>
+<li>Run Scenario DEMO-IMG-simple through the point <a href="#init-tests-DEMO-IMG">init-tests-DEMO-IMG</a>
+</li>
+</ul>
+
+<br>&nbsp;</li>
+
+<li><a name="demo-img-delegation-2">&nbsp;</a>Dean allows Ryan to delegate reading from any channel.
+<br>Dean issues an attribute certificate with the assertion <pre>     may(?c,?n,read) :- &quot;eeeeee&quot; says may(?c,?n,?).
+</pre> and the empty holder field. Ryan issues an attribute
+certificate to the user Greg:<code>may(channel,DEMO-IMG,?a) :- application says access_mode(?a).</code> Greg is the
+holder of the latter certificate.
+<ul>
+<li>Greg sends Dean's and Ryan's attribute certificates and
+his public-key certificate over HTTPS (in the header?) and reads a
+sample image from DEMO-IMG</li>
+
+<li>Greg attempts to read the channel again but without
+providing Dean's attribute certificate</li>
+</ul>
+Expect: Greg reads the image both times. Dean's assertion is
+added to the assertion cache.
+<br>&nbsp;</li>
+
+<li><a name="demo-img-delegation-2-rej">&nbsp;</a>
+<ul>
+<li>Joe attempts to read the channel DEMO-IMG</li>
+
+<li>Greg sends both attribute certificates and his public-key
+certificate over HTTPS (in the header?) and attempts to write another
+sample image into DEMO-IMG</li>
+
+<li>Greg sends both attribute certificates and his public-key
+certificate over HTTPS (in the header?) and attempts to read from MEMO</li>
+</ul>
+Expect: All attempts should be denied and logged. Dean's
+assertion should be in the assertion cache.
+<br>&nbsp;</li>
+</ul>
+<a name="Policy-Check">&nbsp;</a>
+<h3>Scenario Policy-Check</h3>
+Off-line policy check of Soutei assertions
+<ul>
+<li><a name="policy-check-init-assertion">&nbsp;</a>Checking the initial assertion
+<ul>
+<li>Check that there is a Metcast channel and a (remote or
+local) user that cannot access this channel</li>
+
+<li>Check that there is a channel that is not writable by
+everybody</li>
+
+<li>Check that there is no channel that can be accessed by
+every known user</li>
+</ul>
+
+<br>&nbsp;</li>
+
+<li><a name="policy-check-init-assertion-var-mistake-1">&nbsp;</a>Introduce a mistake into the initial assertion:
+<br><code>may(channel,MEMO,?a) :- known_user(?Joe), access(?a).</code>
+<br>The spurious question mark before the user name turns the
+constant into a variable.
+<ul>
+<li>Run checks of <a href="#policy-check-init-assertion">policy-check-init-assertion</a>
+</li>
+</ul>
+Expect: Policy check should fail: every known user can read and write
+the channel MEMO.
+<br>&nbsp;</li>
+
+<li><a name="policy-check-delegation">&nbsp;</a>Check that the user Dean is in full control over DEMO-IMG.
+<ul>
+<li>Check that no one can access DEMO-IMG unless Dean allows
+him to. That is, the explicit denial of access by Dean disallows all
+access to the channel.</li>
+</ul>
+
+<br>&nbsp;</li>
+
+<li><a name="policy-check-delegation-var-mistake">&nbsp;</a>Introduce a mistake into the initial assertion:
+<br><code>may(channel,?MEMO,?a) :- known_user(Joe), access(?a)</code>
+<br>The spurious question mark before the name of the channel turns the constant into a variable.
+<ul>
+<li>Run checks of <a href="#policy-check-delegation">policy-check-delegation</a>
+</li>
+</ul>
+Expect: Policy check should fail: the user Joe is now allowed
+full access to the channel DEMO-IMG, regardless of Dean's wishes.
+<br>&nbsp;</li>
+</ul>
+
+<hr><br>&nbsp;<a name="References">&nbsp;</a>
+<h2>References</h2>
+
+<p><a name="Binder">[Binder]</a> J. DeTreville. Binder, a logic-based security language. IEEE Security and Privacy, 2002. 
+<br>&lt;<a href="http://research.microsoft.com/research/pubs/view.aspx?tr_id=545">http://research.microsoft.com/research/pubs/view.aspx?tr_id=545</a>&gt;</p>
+
+<p><a name="KeyNote">[KeyNote]</a> 
+<br>&lt;<a href="http://www.crypto.com/trustmgt/kn.html">http://www.crypto.com/trustmgt/kn.html</a>&gt;</p>
+
+<p><a name="Transport">[Transport]</a> <a href="Auth-transport.html">Transport of Soutei assertions</a></p>
+
+<p><a name="Metcast-Channels">[Metcast-Channels]</a> Metcast Channels (see the Metnet site).</p>
+
+<p><a name="KANREN">[KANREN]</a> KANREN: A declarative applicative logic programming system
+<br>&lt;<a href="http://kanren.sourceforge.net/">http://kanren.sourceforge.net/</a>&gt;</p>
+
+<p><a name="Mercury-Modes">[Mercury-Modes]</a> The Mercury Language Reference Manual. Version 0.11.0. Modes. 
+<br>&lt;<a href="http://www.cs.mu.oz.au/research/mercury/information/doc-release/reference_manual_4.html">http://www.cs.mu.oz.au/research/mercury/information/doc-release/reference_manual_4.html</a>&gt;</p>
+
+<br>
+<div>
+<hr></div>
+
+<h3>Last updated December 7, 2005</h3>
+
+<p>This site's top page is <a href="http://soutei.sf.net/"><strong>http://soutei.sf.net/</strong></a></p>
+
+<div>
+<address>oleg-at-pobox.com or oleg-at-okmij.org
+<br>Your comments, problem reports, questions are very welcome!</address>
+</div>
+
+<p><font size="-2">Converted from SXML by SXML-&gt;HTML</font></p>
+<h4>$Id: Auth-use-cases.scm,v 2.9 2005/12/08 03:01:57 oleg Exp oleg $</h4></body></html>
