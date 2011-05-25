@@ -1,4 +1,8 @@
-{-# OPTIONS -fglasgow-exts #-}
+{-# LANGUAGE RecursiveDo #-}
+
+-- $HeadURL: https://svn.metnet.navy.mil/svn/metcast/Mserver/trunk/soutei/haskell/Soutei/Lirs.hs $
+-- $Id: Lirs.hs 2580 2010-08-06 00:11:56Z oleg.kiselyov $
+-- svn propset svn:keywords "HeadURL Id" filename
 
 -- LIRS: http://parapet.ee.princeton.edu/~sigm2002/papers/p31-jiang.pdf
 -- Basic idea:  Maintain an LRU list, marking some entries "hot", based on

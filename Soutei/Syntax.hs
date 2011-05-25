@@ -1,7 +1,9 @@
 {-# OPTIONS -fglasgow-exts #-}
 {-# LANGUAGE UndecidableInstances #-}
 
+-- $HeadURL: https://svn.metnet.navy.mil/svn/metcast/Mserver/trunk/soutei/haskell/Soutei/Syntax.hs $
 -- $Id: Syntax.hs 2462 2010-02-04 05:03:57Z oleg.kiselyov $
+-- svn propset svn:keywords "HeadURL Id" filename
 
 module Soutei.Syntax (
   top, assertionL, headL, term, const

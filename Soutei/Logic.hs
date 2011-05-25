@@ -1,6 +1,8 @@
-{-# OPTIONS -fglasgow-exts #-}
+{-# LANGUAGE RecursiveDo, ScopedTypeVariables #-}
 
--- $Id: Logic.hs 2152 2009-05-16 09:07:03Z oleg.kiselyov $
+-- $HeadURL: https://svn.metnet.navy.mil/svn/metcast/Mserver/trunk/soutei/haskell/Soutei/Logic.hs $
+-- $Id: Logic.hs 2582 2010-08-09 23:33:02Z oleg.kiselyov $
+-- svn propset svn:keywords "HeadURL Id" filename
 
 module Soutei.Logic (
   Query,
@@ -585,7 +587,6 @@ val1 = Val (SNumber 1)
 
 instance Arbitrary R where
   arbitrary = liftM2 R (twoElements [varA, val1]) arbitrary
-  coarbitrary = undefined
 
 instance Arbitrary B where
   arbitrary = oneof [arbFoos, return Bar] where
@@ -597,7 +598,6 @@ instance Arbitrary B where
                             return (Foo [(first, r1), (second, r2)])
                     else return (Foo [(first, r1)])
     terms = [varA, varB, val1, Var Anon]
-  coarbitrary = undefined
 
 twoElements l = replicateM 2 (elements l)
 
@@ -743,7 +743,6 @@ simpleRulesPrimsQuery rules prims ctx p as frame =
 
 instance Arbitrary RunVar where
   arbitrary = liftM RV (logSized (\n -> choose (0, n)))
-  coarbitrary = undefined
 
 -- Generate a binding for every possible RunVar.
 instance Arbitrary Env where
@@ -754,7 +753,6 @@ instance Arbitrary Env where
                               return Nothing]
                   pos <- choose (0, n)
                   return (insertAt pos (RV n, v) e)
-  coarbitrary = undefined
 
 insertAt 0 x' xs      = x':xs
 insertAt n x' (x:xs)  = x : insertAt (n-1) x' xs
