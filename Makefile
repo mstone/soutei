@@ -30,6 +30,11 @@ clean::
 	rm -f Soutei/*.hi
 	rm -f Soutei/*.o
 
+soutei-pipelined: soutei-pipelined.hs
+	ghc -O2 --make \
+ 	soutei-pipelined.hs -o $@
+
+
 # The following targets require the FCGI library or Metcast
 # They are present for information only
 #
@@ -38,10 +43,6 @@ clean::
 # 	ghc -O2 --make -I$(FCGIP)/fcgi/include -i$(FCGIP) \
 # 	$(FCGIP)/fcgi/fcgiapp.o $(FCGIP)/fcgi/os_unix.o \
 # 	soutei-fcgi.hs -o $@
-#
-# soutei-pipelined: soutei-pipelined.hs
-# 	ghc -O2 --make -i$(FCGIP) \
-# 	soutei-pipelined.hs -o $@
 #
 # soutei-mux: soutei-mux.hs
 # 	ghc -O2 --make -i$(FCGIP) $(FCGIP)/System/sys_open.o \

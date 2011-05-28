@@ -24,7 +24,7 @@ import Soutei.Assertions (Assertions, fromDataDirWithActions,loadSysCtx, query)
 import Soutei.Syntax
 import Soutei.Soutei as Soutei
 
-import Util.Util
+import Control.Monad.Trans
 import Data.Char                     ( toLower, isSpace, isAlphaNum, ord )
 import Data.List (scanl, init)
 import Numeric (showHex)
@@ -74,7 +74,7 @@ data Policy = Policy{policy_data        :: Assertions,
 		     policy_load_action :: IO Assertions}
 
 main' [dataDir] = do
- let load_action = load_policy dataDir `gcatch` startError
+ let load_action = load_policy dataDir `catch` startError
  policy <- load_action
  reloadFlag <- newIORef False
  Signals.installHandler Signals.userDefinedSignal1 
@@ -123,7 +123,7 @@ getAttrs h = get []
 -- Note that the type of this function says EMonadIO m -- rather than
 -- any MonadCGI. That is, this function assuredly creates no CGI
 -- output!
-logRequest :: EMonadIO m => RequestInfo -> m ()
+logRequest :: MonadIO m => RequestInfo -> m ()
 logRequest req = 
   noteDate ["---> New AuthRequest request\n", show req]
 
@@ -170,6 +170,18 @@ t_split_uri1 = map split_uri [
 -}
 
 
+-- | Split a list in many on a particular element:
+--
+-- > splitAll 'm' "simply marvelous"    == ["si", "ply ", "arvelous"]
+--
+splitAll :: Eq a => a -> [a] -> [[a]]
+splitAll c s = case break (==c) s of
+  ([], [])  -> []
+  (x,  [])  -> [x]
+  (x,  [_]) -> [x, []]
+  (x,  _:y) -> x : splitAll c y
+
+
 soutei_query :: Assertions -> AuthRequest -> IO Bool
 soutei_query policy areq = do
   let goal = Soutei.goal "may" [SString $ areq_verb areq,
@@ -207,7 +219,7 @@ load_policy data_dir = do
  readA ctx = let ctxFile = ctxFilename data_dir ctx in do
   b <- doesFileExist ctxFile
   if b
-    then liftM Just (readFile ctxFile)
+    then (return . Just) =<< readFile ctxFile
     else return Nothing
  logErr err = note [if isUserError err then ioeGetErrorString err
                                        else show err]
