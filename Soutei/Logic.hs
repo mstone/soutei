@@ -286,7 +286,7 @@ compileGoal = compileGoal' (compileAtom (const Only))
 compileGoalBindings = compileGoal' (compileAtom Fst)
 
 newFV :: State Int FrameVar
-newFV = state $ \n -> (FV n, n+1) `using` evalTuple2 r0 rseq
+newFV = StateT $ \n -> return ((FV n, n+1) `using` seqPair r0 rwhnf)
 
 {-
   In unifyHeadArg and bodyToArg, we make use of the HeadVar and BodyVar
