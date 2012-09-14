@@ -1,0 +1,101 @@
+Cabal-Version:       >= 1.14
+Name:                Soutei
+Version:             2.1
+Synopsis:            a logic-based trust-management system
+Description:
+    SOUTEI is a trust-management system, a dialect of Binder, for access
+    control in distributed systems. Soutei policies and credentials are written
+    in a declarative logic-based security language and thus constitute
+    distributed logic programs. Soutei policies are modular, concise, and
+    readable. They support policy verification, and, despite the simplicity of
+    the language, express role- and attribute-based access control lists, and
+    conditional delegation.
+    http://soutei.sourceforge.net/
+    http://github.com/mstone/soutei
+License:             GPLv2
+Author:              Oleg Kiselyov <oleg@okmij.org>, Andrew Pimlott <andrew@pimlott.net>
+Maintainer:          Michael Stone <mistone@akamai.com>
+Stability:           experimental
+Build-Type:          Simple
+
+Library
+  Exposed-Modules:   Soutei.Soutei
+                     Soutei.Assertions,
+                     Soutei.Check,
+                     Soutei.Client,
+                     Soutei.FBackTrack,
+                     Soutei.FBackTrackT,
+                     Soutei.GBBFS,
+                     Soutei.GBBFS1,
+                     Soutei.Lirs,
+                     Soutei.Logic,
+                     Soutei.Parsec,
+                     Soutei.Sexpr,
+                     Soutei.Syntax
+  Build-Depends:     base >= 4.0,
+                     containers -any,
+                     directory -any,
+                     mtl -any,
+                     network -any,
+                     old-locale -any,
+                     old-time -any,
+                     parallel -any,
+                     parsec -any,
+                     QuickCheck == 2.*,
+                     random -any
+  GHC-Options:       -Wall -funbox-strict-fields
+  GHC-Prof-Options:  -prof -auto-all
+  Default-Language:  Haskell2010
+
+Executable soutei-server
+  Main-Is:           soutei-server.hs
+  Other-Modules:     Soutei.Soutei
+  Build-Depends:     base >= 4.0,
+                     containers -any,
+                     directory -any,
+                     mtl -any,
+                     network -any,
+                     old-locale -any,
+                     old-time -any,
+                     parallel -any,
+                     parsec -any,
+                     QuickCheck == 2.*,
+                     random -any
+  GHC-Options:       -Wall -funbox-strict-fields -rtsopts -threaded
+  GHC-Prof-Options:  -prof -auto-all
+  Default-Language:  Haskell2010
+
+Executable soutei-cli
+  Main-Is:           soutei-server.hs
+  Other-Modules:     Soutei.Soutei
+  Build-Depends:     base >= 4.0,
+                     containers -any,
+                     directory -any,
+                     mtl -any,
+                     network -any,
+                     old-locale -any,
+                     old-time -any,
+                     parallel -any,
+                     parsec -any,
+                     QuickCheck == 2.*,
+                     random -any
+  GHC-Options:       -Wall -funbox-strict-fields -rtsopts -threaded
+  GHC-Prof-Options:  -prof -auto-all
+  Default-Language:  Haskell2010
+
+Test-Suite soutei-metcast-tests
+  Type:              exitcode-stdio-1.0
+  Main-is:           demo/metcast-channels/soutei-metcast-tests.hs
+  Build-Depends:     base >= 4.0,
+                     containers -any,
+                     directory -any,
+                     mtl -any,
+                     network -any,
+                     old-locale -any,
+                     old-time -any,
+                     parallel -any,
+                     parsec -any,
+                     QuickCheck == 2.*,
+                     random -any
+  GHC-Options:       -Wall -funbox-strict-fields -rtsopts -threaded
+  Default-Language:  Haskell2010
