@@ -24,17 +24,19 @@ import Soutei.Soutei
 -- The main entry point
 -- The two arguments are the repetition counts (to test the performamce)
 -- For regression tests, pass 1 as the two arguments
-main = getArgs >>= main'
- where main' [reps, queryReps] =
-	  do
-	   putStrLn $ "Soutei Regression tests"
-           runLocalN (read reps) (read queryReps) souteiDemo
-       main' _ = putStrLn $ 
-        "Two arguments are required, "++
-        "the repetition counts `rep' and `queryReps'\n"++
-	"If not doing load testing, invoke this code as\n"++
-	"\t./soutei-metcast-tests 1 1\n\n"
-		 
+main = do
+    getArgs >>= main'
+  where
+    main' [reps, queryReps, input] = do
+        putStrLn $ "Soutei Regression tests"
+        runLocalN (read reps) (read queryReps) input souteiDemo
+    main' _ = do
+        putStrLn $  "Running with default settings:\n"
+                 ++ "    reps = 10\n"
+                 ++ "    queryReps = 10\n"
+                 ++ "    input = demo/metcast-channels/soutei-metcast-demo-init.txt\n"
+        main' ["10", "10", "demo/metcast-channels/soutei-metcast-demo-init.txt"]
+
 
 -- The alternative entry point: run the metcast demo
 main_metcast = do
@@ -310,11 +312,9 @@ data Soutei = Soutei {
                 newAssertion :: String -> String -> String -> IO ()
               }
 
-runLocal = runLocalN 1 1
-
-runLocalN reps queryReps m = do
+runLocalN reps queryReps input m = do
   r <- newIORef emptyF
-  modifyIORefIO r (loadSysCtxF "soutei-metcast-demo-init.txt")
+  modifyIORefIO r (loadSysCtxF input)
   replicateM_ reps (m (Soutei (queryLocal queryReps r) (newAssertionLocal r)))
 
 queryLocal reps r id goal facts = readIORef r >>= \idx -> do
