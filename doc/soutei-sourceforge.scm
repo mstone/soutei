@@ -118,7 +118,7 @@ built on the top of the library.")
 
    (Section 3 "Availability")
    (p "The current version of SOUTEI is 2.1. SOUTEI is OpenSource,
-distributed under the GPL license.")
+distributed under the GPL 2 license.")
    (p
      "SOUTEI has been tested on the following Haskell systems:"
      (br)

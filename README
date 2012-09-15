@@ -24,6 +24,8 @@ Documentation:
   http://soutei.sf.net/doc/
 
 
+The source code is under GPL 2 license.
+
 MANIFEST
 
 Soutei/		The Soutei library (The Soutei `package')
