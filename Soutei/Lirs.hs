@@ -1,7 +1,5 @@
-{-# LANGUAGE RecursiveDo #-}
-
 -- $HeadURL: https://svn.metnet.navy.mil/svn/metcast/Mserver/trunk/soutei/haskell/Soutei/Lirs.hs $
--- $Id: Lirs.hs 2580 2010-08-06 00:11:56Z oleg.kiselyov $
+-- $Id: Lirs.hs 2935 2012-09-12 00:42:48Z oleg.kiselyov $
 -- svn propset svn:keywords "HeadURL Id" filename
 
 -- LIRS: http://parapet.ee.princeton.edu/~sigm2002/papers/p31-jiang.pdf
@@ -120,18 +118,21 @@ get' lirs k = do
                               evictCold lirs
                   return (v, False)
 
-newHot lirs k v lruIns = mdo  let entry = Entry k status
-                              status <- newIORef (Hot lruElem v)
-                              lruElem <- lruIns (lru lirs) entry
-                              modifyIORef (cache lirs) (insert k entry)
-
-newCold lirs k v lruIns coldIns = mdo
+newHot lirs k v lruIns = do
+  status <- newIORef undefined
   let entry = Entry k status
-  status <- newIORef (Cold lruElem coldElem v)
+  lruElem <- lruIns (lru lirs) entry
+  writeIORef status (Hot lruElem v)
+  modifyIORef (cache lirs) (insert k entry)
+
+newCold lirs k v lruIns coldIns = do
+  status <- newIORef undefined
+  let entry = Entry k status
   lruElem <- case lruIns of
                 Just ins -> liftM Just (ins (lru lirs) entry)
                 Nothing  -> return Nothing
   coldElem <- coldIns (cold lirs) entry
+  writeIORef status (Cold lruElem coldElem v)
   modifyIORef (cache lirs) (insert k entry)
 
 forget lirs k = modifyIORef (cache lirs) (delete k)
@@ -235,7 +236,7 @@ testCyclic workingSize maxHot maxSize reps = do
     mapM_ (\i -> assert    (show i) (g i)) [1..maxHot]
     mapM_ (\i -> assertNot (show i) (g i)) [maxHot+1..workingSize]
     print n
-tc = testCyclic 10001 9900 10000 1000
+tc = testCyclic 10001 9900 10000 100
 
 assert :: String -> IO Bool -> IO ()
 assert msg io = io >>= \r -> when (not r) (fail ("assertion failed: " ++ msg))

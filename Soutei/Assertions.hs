@@ -1,5 +1,6 @@
-{-# OPTIONS -fglasgow-exts #-}
--- $Id: Assertions.hs 1936 2008-02-05 06:18:40Z oleg.kiselyov $
+-- $HeadURL: https://svn.metnet.navy.mil/svn/metcast/Mserver/trunk/soutei/haskell/Soutei/Assertions.hs $
+-- $Id: Assertions.hs 2947 2012-09-14 08:26:08Z oleg.kiselyov $
+-- svn propset svn:keywords "HeadURL Id" filename
 
 -- Routines for loading, storing, and running queries against assertions.
 -- Primary interface is imperative because the memory index must be kept in

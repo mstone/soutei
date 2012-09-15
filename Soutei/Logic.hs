@@ -1,7 +1,7 @@
-{-# LANGUAGE RecursiveDo, ScopedTypeVariables #-}
+{-# LANGUAGE DoRec, ScopedTypeVariables #-}
 
 -- $HeadURL: https://svn.metnet.navy.mil/svn/metcast/Mserver/trunk/soutei/haskell/Soutei/Logic.hs $
--- $Id: Logic.hs 2582 2010-08-09 23:33:02Z oleg.kiselyov $
+-- $Id: Logic.hs 2947 2012-09-14 08:26:08Z oleg.kiselyov $
 -- svn propset svn:keywords "HeadURL Id" filename
 
 module Soutei.Logic (
@@ -234,9 +234,9 @@ compile h b = runState compile' 0 where
 
 compileHead :: [SynTerm] ->
           State Int ([Term HeadVar], [(SynVar, (HeadVar, FrameVar, BoundVar))])
-compileHead h = mdo (h', (headVars, dups')) <-
-                      runStateT (mapM (comp dups') (zip [0..] h)) ([], [])
-                    return (h', headVars)
+compileHead h = do rec (h', (headVars, dups')) <-
+                         runStateT (mapM (comp dups') (zip [0..] h)) ([], [])
+                   return (h', headVars)
  where
   comp dups' (i, t) = fmapM comp' t where
     comp' Anon = error "should not mode check"
@@ -250,9 +250,9 @@ compileHead h = mdo (h', (headVars, dups')) <-
 compileBody :: [(SynVar, (HeadVar, FrameVar, BoundVar))] -> [SynBodyAtom] ->
                   State Int [BodyAtom BodyVar]
 compileBody headVars b =
-  mdo (b', (_, dups')) <-
-        runStateT (mapM (compileAtom (const Only) headVars dups') b) ([], [])
-      return b'
+  do rec (b', (_, dups')) <-
+           runStateT (mapM (compileAtom (const Only) headVars dups') b) ([], [])
+     return b'
 
 -- freeOnlyf tells us how to treat vars that would be Free Only, in order to
 -- prevent optimizing them away when we want bindings.
@@ -260,8 +260,8 @@ compileAtom :: FunctorM f => (FrameVar -> BodyUse) ->
                 [(SynVar, (HeadVar, FrameVar, BoundVar))] ->
                 [SynVar] -> f (Var SynVar) ->
                 StateT ([(SynVar, FrameVar)], [SynVar]) (State Int) (f BodyVar)
-compileAtom freeOnlyf headVars bodyDups' atom = mdo
-  (atom', atomDups') <- runStateT (fmapM (comp atomDups') atom) []
+compileAtom freeOnlyf headVars bodyDups' atom = do
+  rec (atom', atomDups') <- runStateT (fmapM (comp atomDups') atom) []
   return atom'
  where
   comp atomDups' Anon = liftM (Free . freeOnlyf) (lift (lift newFV))
@@ -286,7 +286,7 @@ compileGoal = compileGoal' (compileAtom (const Only))
 compileGoalBindings = compileGoal' (compileAtom Fst)
 
 newFV :: State Int FrameVar
-newFV = State $ \n -> (FV n, n+1) `using` seqPair r0 rwhnf
+newFV = state $ \n -> (FV n, n+1) `using` evalTuple2 r0 rseq
 
 {-
   In unifyHeadArg and bodyToArg, we make use of the HeadVar and BodyVar
@@ -485,7 +485,7 @@ withVarCount f s@(n,_) = f n s
 
 incVarCount :: Monad m => Int -> Query m
 incVarCount num (VarCount n, e) = return ((VarCount (n+num), e)
-                                          `using` seqPair rwhnf r0)
+                                          `using` evalTuple2 rseq r0)
 
 maybeToStream :: Monad m => (Env -> Maybe Env) -> Query m
 maybeToStream f (n,e) = case f e of

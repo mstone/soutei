@@ -1,7 +1,7 @@
 {-# LANGUAGE EmptyDataDecls #-}
 
 -- $HeadURL: https://svn.metnet.navy.mil/svn/metcast/Mserver/trunk/soutei/haskell/Soutei/Soutei.hs $
--- $Id: Soutei.hs 2581 2010-08-09 22:22:14Z oleg.kiselyov $
+-- $Id: Soutei.hs 2929 2012-09-11 03:42:25Z oleg.kiselyov $
 -- svn propset svn:keywords "HeadURL Id" filename
 
 module Soutei.Soutei where
@@ -144,13 +144,6 @@ instance Arbitrary v => Arbitrary (Term v) where
   arbitrary = oneof [liftM Var arbitrary, liftM Val arbitrary]
 
 logSized f = sized (\n -> f (floor (log (fromIntegral (n+1)) / log 2) :: Int))
-
--- Grr--Word32 isn't an instance of Random, and Int may be smaller
-instance Arbitrary Word32 where
-  arbitrary = liftM (bytesToBits 4) (replicateM 4 arbitrary)
-
-instance Arbitrary Word8 where
-  arbitrary = liftM fromIntegral (choose (0,255::Int))
 
 prop_ip4of :: Word32 -> Property
 prop_ip4of addr = forAll (choose (0,32)) $ \netBits ->

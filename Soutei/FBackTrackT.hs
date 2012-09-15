@@ -1,13 +1,19 @@
 {- Haskell98! -}
 
+-- $HeadURL: https://svn.metnet.navy.mil/svn/metcast/Mserver/trunk/soutei/haskell/Soutei/FBackTrackT.hs $
+-- $Id: FBackTrackT.hs 2926 2012-09-07 04:43:30Z oleg.kiselyov $
+-- svn propset svn:keywords "HeadURL Id" filename
+
 -- Simple Fair back-tracking monad TRANSFORMER
 -- Made by `transforming' the stand-alone monad from FBackTrack.hs,
 -- which, in turn, is based on the Scheme code book-si, 
 -- `Stream implementation, with incomplete' as of Feb 18, 2005
 --
--- The transformation from a stand-alone Stream monad to a monad transformer
+-- The transformatiion from a stand-alone Stream monad to a monad transformer
 -- is not at all similar to the trick described in Ralf Hinze's ICFP'00 paper,
 -- Deriving backtracking monad transformers. 
+
+-- $Id: FBackTrackT.hs 2926 2012-09-07 04:43:30Z oleg.kiselyov $
 
 module Soutei.FBackTrackT (Stream, yield, runM) where
 
@@ -19,7 +25,7 @@ data StreamE m a = Nil | One a |
 		   Choice a (Stream m a) | 
 		   Incomplete (Stream m a)
 
-newtype Monad m => Stream m a = Stream{unStream :: m (StreamE m a)}
+newtype Stream m a = Stream{unStream :: m (StreamE m a)}
 
 
 instance Monad m => Monad (Stream m) where
